@@ -38,7 +38,7 @@ services:
   # APLICACIÓN - TuxMan
   # ------------------------------
   app:
-    image: TUUSUARIO/tuxman:latest                 # ⚠️ CAMBIA "TUUSUARIO"
+    image: f1rul4yx/tuxman:latest                 # ⚠️ CAMBIA "TUUSUARIO"
     container_name: tuxman-app
     restart: unless-stopped
     ports:
