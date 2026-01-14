@@ -1,0 +1,65 @@
+version: '3.8'
+
+# =============================================
+# 🐧 TUXMAN - Docker Compose
+# =============================================
+#
+# INSTRUCCIONES:
+# 1. Cambia "TUUSUARIO" por tu usuario de Docker Hub
+# 2. Cambia las contraseñas (DB_PASSWORD y JWT_SECRET)
+# 3. Ejecuta: docker-compose up -d
+# 4. Abre: http://localhost:3000
+#
+# =============================================
+
+services:
+  # ------------------------------
+  # BASE DE DATOS - PostgreSQL
+  # ------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: tuxman-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tuxman
+      POSTGRES_PASSWORD: TuPasswordSegura123      # ⚠️ CAMBIA ESTO
+      POSTGRES_DB: tuxman
+    volumes:
+      - tuxman_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tuxman -d tuxman"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tuxman-network
+
+  # ------------------------------
+  # APLICACIÓN - TuxMan
+  # ------------------------------
+  app:
+    image: TUUSUARIO/tuxman:latest                 # ⚠️ CAMBIA "TUUSUARIO"
+    container_name: tuxman-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      JWT_SECRET: CambiaEstoCon32CaracteresMinimo  # ⚠️ CAMBIA ESTO
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: tuxman
+      DB_PASSWORD: TuPasswordSegura123             # ⚠️ IGUAL QUE ARRIBA
+      DB_NAME: tuxman
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - tuxman-network
+
+networks:
+  tuxman-network:
+    driver: bridge
+
+volumes:
+  tuxman_data:
