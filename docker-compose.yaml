@@ -4,10 +4,10 @@ version: '3.8'
 # 🐧 TUXMAN - Docker Compose
 # =============================================
 #
-# INSTRUCCIONES:
-# 1. Cambia "TUUSUARIO" por tu usuario de Docker Hub
-# 2. Cambia las contraseñas (DB_PASSWORD y JWT_SECRET)
-# 3. Ejecuta: docker-compose up -d
+# ANTES DE USAR:
+# 1. Cambia las contraseñas (DB_PASSWORD y JWT_SECRET)
+# 2. Construye la imagen: docker compose build
+# 3. Ejecuta: docker compose up -d
 # 4. Abre: http://localhost:3000
 #
 # =============================================
@@ -22,8 +22,9 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: tuxman
-      POSTGRES_PASSWORD: TuPasswordSegura123      # ⚠️ CAMBIA ESTO
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-TuPasswordSegura123}
       POSTGRES_DB: tuxman
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
       - tuxman_data:/var/lib/postgresql/data
     healthcheck:
@@ -31,35 +32,57 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - tuxman-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ------------------------------
   # APLICACIÓN - TuxMan
   # ------------------------------
   app:
-    image: f1rul4yx/tuxman:latest                 # ⚠️ CAMBIA "TUUSUARIO"
+    build:
+      context: ./build
+      dockerfile: Dockerfile
+    image: f1rul4yx/tuxman:latest
     container_name: tuxman-app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
-      JWT_SECRET: CambiaEstoCon32CaracteresMinimo  # ⚠️ CAMBIA ESTO
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-CambiaEstoCon32CaracteresMinimo}
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: tuxman
-      DB_PASSWORD: TuPasswordSegura123             # ⚠️ IGUAL QUE ARRIBA
+      DB_PASSWORD: ${DB_PASSWORD:-TuPasswordSegura123}
       DB_NAME: tuxman
     depends_on:
       db:
         condition: service_healthy
     networks:
       - tuxman-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+# ------------------------------
+# NETWORKS
+# ------------------------------
 networks:
   tuxman-network:
     driver: bridge
 
+# ------------------------------
+# VOLUMES
+# ------------------------------
 volumes:
   tuxman_data:
+    driver: local

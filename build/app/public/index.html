@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TuxMan - El Pac-Man de Linux</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐧</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -311,14 +312,18 @@
         .game-canvas-container {
             position: relative;
             border: 3px solid var(--terminal-green);
-            box-shadow: 
+            box-shadow:
                 0 0 20px var(--terminal-green),
                 inset 0 0 20px rgba(0, 255, 65, 0.1);
+            max-width: 100%;
+            margin: 0 auto;
         }
 
         #gameCanvas {
             display: block;
             background: var(--bg-dark);
+            max-width: 100%;
+            height: auto;
         }
 
         .game-controls {
@@ -353,14 +358,21 @@
 
         .mobile-controls {
             display: none;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 5px;
+            grid-template-columns: repeat(3, 70px);
+            grid-template-rows: repeat(3, 70px);
+            gap: 8px;
             margin-top: 20px;
+            justify-content: center;
         }
 
         @media (max-width: 768px) {
             .mobile-controls { display: grid; }
+            .game-stats {
+                font-size: 0.9rem;
+            }
+            .stat-value {
+                font-size: 1.4rem !important;
+            }
         }
 
         .mobile-btn {
@@ -661,6 +673,129 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .settings-btn {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 8px 16px;
+            font-family: 'Share Tech Mono', monospace;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.2rem;
+        }
+
+        .settings-btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+        }
+
+        .settings-panel {
+            background: var(--bg-terminal);
+            border: 2px solid var(--terminal-green);
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .settings-group {
+            margin-bottom: 25px;
+        }
+
+        .settings-label {
+            display: block;
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .volume-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: var(--terminal-dark);
+            outline: none;
+            border-radius: 4px;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--terminal-green);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--terminal-green);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--terminal-green);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--terminal-green);
+            border: none;
+        }
+
+        .volume-value {
+            color: var(--terminal-green);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--terminal-dark);
+            transition: 0.3s;
+            border: 2px solid var(--terminal-green);
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--terminal-green);
+            transition: 0.3s;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--terminal-green);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+            background-color: var(--bg-dark);
+        }
     </style>
 </head>
 <body>
@@ -676,14 +811,18 @@
                 <span class="user-coins"><span class="coin-icon">⬢</span> <span id="displayCoins">0</span> tokens</span>
                 <span style="color: var(--accent-purple);">★ Best: <span id="displayBest">0</span></span>
             </div>
-            <button class="btn-logout" onclick="logout()">$ logout</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="settings-btn" onclick="openSettings()">⚙</button>
+                <button class="btn-logout" onclick="logout()">$ logout</button>
+            </div>
         </div>
 
         <nav class="nav-bar">
             <button class="nav-btn active" onclick="showScreen('game')" data-screen="game">./jugar</button>
             <button class="nav-btn" onclick="showScreen('shop')" data-screen="shop">./tienda</button>
             <button class="nav-btn" onclick="showScreen('leaderboard')" data-screen="leaderboard">./ranking</button>
-            <button class="nav-btn" onclick="showScreen('login')" data-screen="login" id="loginBtn">./login</button>
+            <button class="nav-btn" onclick="openSettings()">./ajustes</button>
+            <button class="nav-btn" onclick="switchProfileScreen()" data-screen="login" id="loginBtn">./login</button>
         </nav>
 
         <section class="screen" id="loginScreen">
@@ -724,6 +863,10 @@
 
         <section class="screen active" id="gameScreen">
             <div class="game-wrapper">
+                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="game-btn" id="modeInfinite" onclick="setGameMode('infinite')" style="border-color: var(--terminal-green); color: var(--terminal-green);">♾️ MODO INFINITO</button>
+                    <button class="game-btn" id="modeCampaign" onclick="setGameMode('campaign')">🏔️ MODO KERNEL</button>
+                </div>
                 <div class="game-stats">
                     <div class="stat">
                         <div class="stat-label">SCORE</div>
@@ -779,18 +922,57 @@
 
         <section class="screen" id="leaderboardScreen">
             <div class="leaderboard-container">
-                <h2 style="text-align: center; margin-bottom: 30px; color: var(--accent-cyan);">$ cat /var/log/highscores</h2>
+                <h2 style="text-align: center; margin-bottom: 20px; color: var(--accent-cyan);">$ cat /var/log/highscores</h2>
+
+                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+                    <button class="game-btn" id="rankingInfinite" onclick="loadLeaderboard('infinite')" style="border-color: var(--terminal-green); color: var(--terminal-green);">♾️ INFINITO</button>
+                    <button class="game-btn" id="rankingCampaign" onclick="loadLeaderboard('campaign')">🏔️ KERNEL</button>
+                </div>
+
                 <table class="leaderboard-table">
-                    <thead>
+                    <thead id="leaderboardHeader">
                         <tr>
                             <th>#</th>
                             <th>Usuario</th>
-                            <th>Puntuación</th>
+                            <th id="scoreHeader">Puntuación</th>
                             <th>Partidas</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboardBody"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <section class="screen" id="profileScreen">
+            <div class="login-container">
+                <h2 style="text-align: center; margin-bottom: 30px; color: var(--accent-cyan);">$ whoami</h2>
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 5rem; margin-bottom: 20px;" id="profileAvatar">🐧</div>
+                    <h3 style="color: var(--terminal-green); font-size: 1.5rem; margin-bottom: 10px;" id="profileUsername">Usuario</h3>
+                </div>
+                <div style="background: var(--bg-dark); padding: 20px; margin-bottom: 20px; border: 1px solid var(--terminal-dark);">
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--terminal-dark);">
+                        <span style="color: var(--accent-cyan);">Tokens:</span>
+                        <span style="color: var(--accent-yellow);" id="profileCoins">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--terminal-dark);">
+                        <span style="color: var(--accent-cyan);">♾️ Mejor Puntuación (Infinito):</span>
+                        <span style="color: var(--terminal-green);" id="profileBestScore">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--terminal-dark);">
+                        <span style="color: var(--accent-cyan);">♾️ Partidas (Infinito):</span>
+                        <span style="color: var(--terminal-green);" id="profileGamesInfinite">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--terminal-dark);">
+                        <span style="color: var(--accent-cyan);">🏔️ Nivel Máximo (Kernel):</span>
+                        <span style="color: var(--accent-purple);" id="profileHighestLevel">1</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                        <span style="color: var(--accent-cyan);">🏔️ Partidas (Kernel):</span>
+                        <span style="color: var(--accent-purple);" id="profileGamesCampaign">0</span>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="logout()" style="background: var(--ghost-red);">$ logout</button>
             </div>
         </section>
     </div>
@@ -820,11 +1002,109 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="settingsModal">
+        <div class="settings-panel">
+            <h2 style="text-align: center; margin-bottom: 30px; color: var(--terminal-green);">$ ./ajustes --config</h2>
+
+            <div class="settings-group">
+                <label class="settings-label">$ echo "SONIDO"</label>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="soundToggle" checked onchange="toggleSound()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="color: var(--terminal-green);" id="soundStatus">ON</span>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">$ echo "VOLUMEN"</label>
+                <div class="volume-control">
+                    <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider" oninput="updateVolume(this.value)">
+                    <span class="volume-value" id="volumeValue">50%</span>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="closeSettings()">✓ Guardar</button>
+        </div>
+    </div>
+
     <script>
         // ==================== API CONFIG ====================
         const API_URL = window.location.origin + '/api';
         let authToken = localStorage.getItem('tuxman_token');
         let currentUser = null;
+
+        // ==================== AUDIO SYSTEM ====================
+        let audioContext = null;
+        let masterVolume = parseFloat(localStorage.getItem('tuxman_volume') || '0.5');
+        let soundEnabled = localStorage.getItem('tuxman_sound') !== 'false';
+
+        function initAudio() {
+            if (!audioContext && soundEnabled) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(frequency, duration, type = 'sine', volume = 1) {
+            if (!soundEnabled || !audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = type;
+            oscillator.frequency.value = frequency;
+            gainNode.gain.value = masterVolume * volume;
+
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playEatDotSound() {
+            playSound(800, 0.05, 'sine', 0.3);
+        }
+
+        function playEatPowerUpSound() {
+            playSound(400, 0.1, 'square', 0.4);
+            setTimeout(() => playSound(600, 0.1, 'square', 0.4), 50);
+            setTimeout(() => playSound(800, 0.15, 'square', 0.4), 100);
+        }
+
+        function playEatGhostSound() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => playSound(200 + i * 100, 0.05, 'sawtooth', 0.5), i * 30);
+            }
+        }
+
+        function playDeathSound() {
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => playSound(800 - i * 80, 0.1, 'sawtooth', 0.6), i * 40);
+            }
+        }
+
+        function playLevelUpSound() {
+            playSound(400, 0.1, 'sine', 0.5);
+            setTimeout(() => playSound(500, 0.1, 'sine', 0.5), 100);
+            setTimeout(() => playSound(600, 0.1, 'sine', 0.5), 200);
+            setTimeout(() => playSound(800, 0.3, 'sine', 0.5), 300);
+        }
+
+        function playGameOverSound() {
+            playSound(400, 0.2, 'triangle', 0.6);
+            setTimeout(() => playSound(350, 0.2, 'triangle', 0.6), 200);
+            setTimeout(() => playSound(300, 0.4, 'triangle', 0.6), 400);
+        }
+
+        function playVictorySound() {
+            playSound(523, 0.1, 'sine', 0.5);
+            setTimeout(() => playSound(659, 0.1, 'sine', 0.5), 100);
+            setTimeout(() => playSound(784, 0.1, 'sine', 0.5), 200);
+            setTimeout(() => playSound(1047, 0.4, 'sine', 0.5), 300);
+        }
 
         // ==================== API HELPERS ====================
         async function apiCall(endpoint, method = 'GET', body = null) {
@@ -855,6 +1135,8 @@
         const CELL_SIZE = 20;
         const COLS = 28;
         const ROWS = 31;
+        const BASE_WIDTH = 560;
+        const BASE_HEIGHT = 620;
 
         let canvas, ctx;
         let gameLoop = null;
@@ -867,6 +1149,12 @@
         let totalDots = 0;
         let powerUpActive = false;
         let powerUpTimer = null;
+        let powerUpTimeRemaining = 0;
+        let canvasScale = 1;
+        let gameMode = localStorage.getItem('tuxman_gamemode') || 'infinite'; // 'infinite' or 'campaign'
+        let gameTime = 0;
+        let highestLevelCampaign = 1;
+        let currentCheckpoint = 1;
 
         const BASE_TUX_SPEED = 6;
         const BASE_GHOST_SPEED = 5;
@@ -882,10 +1170,10 @@
         };
 
         const ghostData = [
-            { name: 'systemd', color: '#ff5555', startX: 13, startY: 11, mode: 'chase' },
-            { name: 'cron', color: '#8be9fd', startX: 11, startY: 14, mode: 'scatter' },
-            { name: 'init', color: '#ffb86c', startX: 13, startY: 14, mode: 'chase' },
-            { name: 'sshd', color: '#ff79c6', startX: 15, startY: 14, mode: 'scatter' }
+            { name: 'systemd', color: '#ff5555', startX: 13, startY: 11, mode: 'chase', personality: 'aggressive', releaseTime: 0, startOutside: true },
+            { name: 'cron', color: '#8be9fd', startX: 11, startY: 14, mode: 'scatter', personality: 'patroller', releaseTime: 3 },
+            { name: 'init', color: '#ffb86c', startX: 13, startY: 14, mode: 'chase', personality: 'ambusher', releaseTime: 6 },
+            { name: 'sshd', color: '#ff79c6', startX: 15, startY: 14, mode: 'scatter', personality: 'random', releaseTime: 9 }
         ];
 
         let ghosts = [];
@@ -1045,6 +1333,16 @@
                 document.getElementById('displayCoins').textContent = currentUser.coins;
                 document.getElementById('displayBest').textContent = currentUser.bestScore;
                 loginBtn.textContent = './perfil';
+
+                // Update profile screen
+                const skin = shopItems.find(i => i.id === currentUser.equippedSkin);
+                document.getElementById('profileAvatar').textContent = skin ? skin.emoji : '🐧';
+                document.getElementById('profileUsername').textContent = currentUser.username;
+                document.getElementById('profileCoins').textContent = currentUser.coins;
+                document.getElementById('profileBestScore').textContent = currentUser.bestScore;
+                document.getElementById('profileHighestLevel').textContent = currentUser.highestLevelCampaign || 1;
+                document.getElementById('profileGamesInfinite').textContent = currentUser.gamesPlayedInfinite || 0;
+                document.getElementById('profileGamesCampaign').textContent = currentUser.gamesPlayedCampaign || 0;
             } else {
                 userBar.classList.remove('visible');
                 loginBtn.textContent = './login';
@@ -1053,16 +1351,32 @@
             renderShop();
         }
 
+        function switchProfileScreen() {
+            if (currentUser) {
+                showScreen('profile');
+            } else {
+                showScreen('login');
+            }
+        }
+
         // ==================== NAVIGATION ====================
         function showScreen(screenName) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
             document.getElementById(screenName + 'Screen').classList.add('active');
-            document.querySelector(`[data-screen="${screenName}"]`).classList.add('active');
+
+            // Mark correct nav button as active
+            if (screenName === 'profile' || screenName === 'login') {
+                document.querySelector(`[data-screen="login"]`).classList.add('active');
+            } else {
+                const btn = document.querySelector(`[data-screen="${screenName}"]`);
+                if (btn) btn.classList.add('active');
+            }
 
             if (screenName === 'shop') renderShop();
             if (screenName === 'leaderboard') loadLeaderboard();
+            if (screenName === 'profile') updateUserUI();
         }
 
         // ==================== SHOP ====================
@@ -1129,12 +1443,37 @@
         }
 
         // ==================== LEADERBOARD ====================
-        async function loadLeaderboard() {
+        let currentLeaderboardMode = 'infinite';
+
+        async function loadLeaderboard(mode) {
+            if (mode) {
+                currentLeaderboardMode = mode;
+            }
+
             const tbody = document.getElementById('leaderboardBody');
+            const scoreHeader = document.getElementById('scoreHeader');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;"><span class="loading"></span></td></tr>';
 
+            // Update button styles
+            const infiniteBtn = document.getElementById('rankingInfinite');
+            const campaignBtn = document.getElementById('rankingCampaign');
+
+            if (currentLeaderboardMode === 'infinite') {
+                infiniteBtn.style.borderColor = 'var(--terminal-green)';
+                infiniteBtn.style.color = 'var(--terminal-green)';
+                campaignBtn.style.borderColor = 'var(--accent-cyan)';
+                campaignBtn.style.color = 'var(--accent-cyan)';
+                scoreHeader.textContent = 'Puntuación';
+            } else {
+                campaignBtn.style.borderColor = 'var(--terminal-green)';
+                campaignBtn.style.color = 'var(--terminal-green)';
+                infiniteBtn.style.borderColor = 'var(--accent-cyan)';
+                infiniteBtn.style.color = 'var(--accent-cyan)';
+                scoreHeader.textContent = 'Nivel Máximo';
+            }
+
             try {
-                const data = await apiCall('/leaderboard');
+                const data = await apiCall(`/leaderboard?mode=${currentLeaderboardMode}`);
                 tbody.innerHTML = '';
 
                 if (data.leaderboard.length === 0) {
@@ -1147,10 +1486,14 @@
                     const tr = document.createElement('tr');
                     tr.className = rank <= 3 ? `rank-${rank}` : '';
 
+                    const scoreValue = currentLeaderboardMode === 'infinite' ?
+                        user.score.toLocaleString() :
+                        `Nivel ${user.level}`;
+
                     tr.innerHTML = `
                         <td><span class="rank-badge">${rank}</span></td>
                         <td>${user.username} ${user.username === currentUser?.username ? '(tú)' : ''}</td>
-                        <td style="color: var(--terminal-green);">${user.best_score.toLocaleString()}</td>
+                        <td style="color: var(--terminal-green);">${scoreValue}</td>
                         <td>${user.games_played}</td>
                     `;
 
@@ -1161,10 +1504,89 @@
             }
         }
 
+        // ==================== GAME MODE ====================
+        function setGameMode(mode) {
+            if (gameState === 'playing') {
+                showToast('No puedes cambiar el modo durante una partida', true);
+                return;
+            }
+
+            // Reset game state when changing modes
+            if (gameMode !== mode) {
+                gameState = 'idle';
+                if (gameLoop) cancelAnimationFrame(gameLoop);
+            }
+
+            gameMode = mode;
+            localStorage.setItem('tuxman_gamemode', mode);
+            const infiniteBtn = document.getElementById('modeInfinite');
+            const campaignBtn = document.getElementById('modeCampaign');
+
+            if (mode === 'infinite') {
+                infiniteBtn.style.borderColor = 'var(--terminal-green)';
+                infiniteBtn.style.color = 'var(--terminal-green)';
+                campaignBtn.style.borderColor = 'var(--accent-cyan)';
+                campaignBtn.style.color = 'var(--accent-cyan)';
+                level = 1;
+                score = 0;
+            } else {
+                campaignBtn.style.borderColor = 'var(--terminal-green)';
+                campaignBtn.style.color = 'var(--terminal-green)';
+                infiniteBtn.style.borderColor = 'var(--accent-cyan)';
+                infiniteBtn.style.color = 'var(--accent-cyan)';
+                // Load campaign progress if in campaign mode
+                if (currentUser) {
+                    loadCampaignProgress();
+                } else {
+                    level = 1;
+                    currentCheckpoint = 1;
+                }
+                score = 0;
+            }
+
+            // Reinitialize game
+            initGame();
+
+            showToast(`Modo: ${mode === 'infinite' ? 'Infinito' : 'Kernel (Campaña)'}`);
+        }
+
+        async function loadCampaignProgress() {
+            if (!currentUser) return;
+
+            try {
+                const data = await apiCall('/game/campaign-progress');
+                highestLevelCampaign = data.highestLevel || 1;
+                currentCheckpoint = data.currentCheckpoint || 1;
+                level = currentCheckpoint;
+                showToast(`Progreso cargado. Nivel: ${currentCheckpoint}`);
+                updateStats(); // Update UI to show correct level
+            } catch (error) {
+                console.error('Error loading campaign progress:', error);
+                highestLevelCampaign = 1;
+                currentCheckpoint = 1;
+                level = 1;
+                updateStats();
+            }
+        }
+
         // ==================== GAME FUNCTIONS ====================
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(window.innerWidth - 40, BASE_WIDTH);
+            const scale = maxWidth / BASE_WIDTH;
+
+            canvasScale = scale;
+            canvas.width = BASE_WIDTH;
+            canvas.height = BASE_HEIGHT;
+            canvas.style.width = (BASE_WIDTH * scale) + 'px';
+            canvas.style.height = (BASE_HEIGHT * scale) + 'px';
+        }
+
         function initGame() {
             canvas = document.getElementById('gameCanvas');
             ctx = canvas.getContext('2d');
+
+            resizeCanvas();
 
             gameMap = baseMap.map(row => [...row]);
 
@@ -1183,20 +1605,31 @@
                 animFrame: 0
             };
 
-            ghosts = ghostData.map(g => ({
-                ...g,
-                x: g.startX, y: g.startY,
-                visualX: g.startX, visualY: g.startY,
-                direction: 'up',
-                scared: false,
-                returning: false,
-                moveProgress: 0
-            }));
+            ghosts = ghostData.map(g => {
+                const startY = g.startOutside ? 11 : g.startY;
+                return {
+                    ...g,
+                    x: g.startX,
+                    y: startY,
+                    visualX: g.startX,
+                    visualY: startY,
+                    direction: 'left',
+                    scared: false,
+                    returning: false,
+                    moveProgress: 0,
+                    released: g.releaseTime === 0,
+                    releaseCounter: 0,
+                    inHouse: !g.startOutside
+                };
+            });
 
-            score = 0;
+            if (gameState === 'idle') {
+                score = 0;
+            }
             lives = 3;
             dotsEaten = 0;
             powerUpActive = false;
+            gameTime = 0;
 
             updateStats();
             draw();
@@ -1204,6 +1637,19 @@
 
         function startGame() {
             if (gameState === 'playing') return;
+
+            initAudio();
+
+            if (gameState === 'idle') {
+                // Starting fresh game
+                score = 0;
+                if (gameMode === 'infinite') {
+                    level = 1;
+                } else {
+                    // Campaign mode - start from checkpoint
+                    level = currentCheckpoint;
+                }
+            }
 
             if (gameState === 'idle' || gameState === 'gameover') {
                 initGame();
@@ -1244,24 +1690,48 @@
 
         function update(deltaTime) {
             tux.animFrame += deltaTime * 10;
+            gameTime += deltaTime;
+
+            if (powerUpActive) {
+                powerUpTimeRemaining -= deltaTime;
+                if (powerUpTimeRemaining < 0) powerUpTimeRemaining = 0;
+            }
 
             tuxSpeed = BASE_TUX_SPEED + (level - 1) * 0.5;
             ghostSpeed = BASE_GHOST_SPEED + (level - 1) * 0.4;
 
             updateTux(deltaTime);
 
-            ghosts.forEach(ghost => updateGhost(ghost, deltaTime));
+            // Release ghosts based on time
+            ghosts.forEach(ghost => {
+                if (!ghost.released && !ghost.returning && ghost.inHouse) {
+                    ghost.releaseCounter += deltaTime;
+                    if (ghost.releaseCounter >= ghost.releaseTime) {
+                        ghost.released = true;
+                    }
+                }
+            });
+
+            // Update all ghosts (even if not released, they need to move towards exit)
+            ghosts.forEach(ghost => {
+                updateGhost(ghost, deltaTime);
+            });
 
             ghosts.forEach(ghost => {
+                // Only check collision with released ghosts that are outside the house
+                if (!ghost.released || ghost.inHouse) return;
+
                 const dist = Math.hypot(ghost.visualX - tux.visualX, ghost.visualY - tux.visualY);
                 if (dist < 0.8) {
                     if (ghost.scared && !ghost.returning) {
                         ghost.returning = true;
                         score += 200;
+                        playEatGhostSound();
                     } else if (!ghost.returning) {
                         lives--;
+                        playDeathSound();
                         if (lives <= 0) {
-                            gameOver(false);
+                            gameOver();
                         } else {
                             resetPositions();
                         }
@@ -1271,11 +1741,10 @@
 
             if (dotsEaten >= totalDots) {
                 level++;
-                if (level > 5) {
-                    gameOver(true);
-                } else {
-                    nextLevel();
+                if (gameMode === 'campaign') {
+                    highestLevelCampaign = Math.max(highestLevelCampaign, level);
                 }
+                nextLevel();
             }
 
             updateStats();
@@ -1319,23 +1788,42 @@
                 ghost.x = Math.round(ghost.visualX);
                 ghost.y = Math.round(ghost.visualY);
 
+                // Check if ghost reached house
                 if (ghost.returning && ghost.x === 13 && ghost.y === 14) {
                     ghost.returning = false;
                     ghost.scared = false;
+                    ghost.inHouse = true;
+                    ghost.released = false;
+                    ghost.releaseCounter = 0;
                 }
 
                 let newDir;
-                if (ghost.returning) {
-                    newDir = getDirectionTowards(ghost, 13, 14);
-                } else if (ghost.scared) {
-                    newDir = getRandomDirection(ghost);
-                } else if (ghost.mode === 'chase') {
-                    newDir = getDirectionTowards(ghost, tux.x, tux.y);
-                } else {
-                    newDir = getRandomDirection(ghost);
+
+                // Check if leaving the house
+                if (ghost.inHouse && !ghost.returning) {
+                    if (ghost.x === 13 && ghost.y === 11) {
+                        ghost.inHouse = false;
+                        ghost.direction = 'left';
+                    }
                 }
 
-                if (newDir) ghost.direction = newDir;
+                if (ghost.returning) {
+                    // Returning to house after being eaten
+                    newDir = getDirectionTowards(ghost, 13, 14);
+                    if (newDir) ghost.direction = newDir;
+                } else if (ghost.scared) {
+                    // Scared, run away randomly
+                    newDir = getSmartRandomDirection(ghost);
+                    if (newDir) ghost.direction = newDir;
+                } else if (ghost.inHouse && ghost.released) {
+                    // In house and released, go directly to exit
+                    newDir = getDirectionTowards(ghost, 13, 11);
+                    if (newDir) ghost.direction = newDir;
+                } else if (!ghost.inHouse) {
+                    // Normal hunting behavior
+                    newDir = getGhostDirection(ghost);
+                    if (newDir) ghost.direction = newDir;
+                }
             }
 
             const delta = getDirectionDelta(ghost.direction);
@@ -1345,7 +1833,7 @@
             const targetX = Math.round(newVisualX + delta.dx * 0.5);
             const targetY = Math.round(newVisualY + delta.dy * 0.5);
 
-            if (canGhostMove(targetX, targetY) || !isNearCenter(ghost.visualX, ghost.visualY)) {
+            if (canGhostMove(targetX, targetY, ghost) || !isNearCenter(ghost.visualX, ghost.visualY)) {
                 ghost.visualX = newVisualX;
                 ghost.visualY = newVisualY;
             }
@@ -1370,11 +1858,48 @@
                 gameMap[y][x] = 2;
                 score += 10;
                 dotsEaten++;
+                playEatDotSound();
             } else if (cell === 3) {
                 gameMap[y][x] = 2;
                 score += 50;
                 dotsEaten++;
+                playEatPowerUpSound();
                 activatePowerUp();
+            }
+        }
+
+        function getGhostDirection(ghost) {
+            switch (ghost.personality) {
+                case 'aggressive':
+                    // Persigue directamente al jugador
+                    return getDirectionTowards(ghost, tux.x, tux.y);
+
+                case 'ambusher':
+                    // Intenta anticipar la posición del jugador
+                    const delta = getDirectionDelta(tux.direction);
+                    const targetX = tux.x + delta.dx * 4;
+                    const targetY = tux.y + delta.dy * 4;
+                    return getDirectionTowards(ghost, targetX, targetY);
+
+                case 'patroller':
+                    // Patrulla pero va hacia el jugador si está cerca
+                    const dist = Math.hypot(ghost.x - tux.x, ghost.y - tux.y);
+                    if (dist < 8) {
+                        return getDirectionTowards(ghost, tux.x, tux.y);
+                    } else {
+                        return getSmartRandomDirection(ghost);
+                    }
+
+                case 'random':
+                    // Movimiento más impredecible
+                    if (Math.random() < 0.3) {
+                        return getDirectionTowards(ghost, tux.x, tux.y);
+                    } else {
+                        return getSmartRandomDirection(ghost);
+                    }
+
+                default:
+                    return getDirectionTowards(ghost, tux.x, tux.y);
             }
         }
 
@@ -1390,7 +1915,7 @@
                 const newX = ghost.x + delta.dx;
                 const newY = ghost.y + delta.dy;
 
-                if (canGhostMove(newX, newY)) {
+                if (canGhostMove(newX, newY, ghost)) {
                     const dist = Math.hypot(newX - targetX, newY - targetY);
                     if (dist < bestDist) {
                         bestDist = dist;
@@ -1402,16 +1927,39 @@
             return bestDir || ghost.direction;
         }
 
+        function getSmartRandomDirection(ghost) {
+            const directions = ['up', 'down', 'left', 'right'].filter(d => {
+                if (isOpposite(d, ghost.direction)) return false;
+                const delta = getDirectionDelta(d);
+                return canGhostMove(ghost.x + delta.dx, ghost.y + delta.dy, ghost);
+            });
+
+            // Prefer continuing forward if possible
+            if (directions.includes(ghost.direction) && Math.random() < 0.7) {
+                return ghost.direction;
+            }
+
+            if (directions.length === 0) {
+                const delta = getDirectionDelta(ghost.direction);
+                if (!canGhostMove(ghost.x + delta.dx, ghost.y + delta.dy, ghost)) {
+                    return getOppositeDirection(ghost.direction);
+                }
+                return ghost.direction;
+            }
+
+            return directions[Math.floor(Math.random() * directions.length)];
+        }
+
         function getRandomDirection(ghost) {
             const directions = ['up', 'down', 'left', 'right'].filter(d => {
                 if (isOpposite(d, ghost.direction)) return false;
                 const delta = getDirectionDelta(d);
-                return canGhostMove(ghost.x + delta.dx, ghost.y + delta.dy);
+                return canGhostMove(ghost.x + delta.dx, ghost.y + delta.dy, ghost);
             });
 
             if (directions.length === 0) {
                 const delta = getDirectionDelta(ghost.direction);
-                if (!canGhostMove(ghost.x + delta.dx, ghost.y + delta.dy)) {
+                if (!canGhostMove(ghost.x + delta.dx, ghost.y + delta.dy, ghost)) {
                     return getOppositeDirection(ghost.direction);
                 }
                 return ghost.direction;
@@ -1444,10 +1992,26 @@
             return cell !== 0 && cell !== 4;
         }
 
-        function canGhostMove(x, y) {
+        function canGhostMove(x, y, ghost) {
             if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return true;
             const cell = gameMap[y][x];
-            return cell !== 0;
+
+            // Walls are not walkable
+            if (cell === 0) return false;
+
+            // Ghost house (cell === 4)
+            // Ghosts can move freely inside the house (from 4 to 4)
+            // But can only ENTER the house from outside if returning
+            if (cell === 4) {
+                if (!ghost) return false;
+                // If ghost is already in a house cell, allow movement to another house cell
+                const currentCell = gameMap[Math.round(ghost.y)][Math.round(ghost.x)];
+                if (currentCell === 4) return true; // Already inside, can move freely
+                // Trying to enter from outside, only if returning
+                return ghost.returning;
+            }
+
+            return true;
         }
 
         function getDirectionDelta(direction) {
@@ -1469,6 +2033,7 @@
 
         function activatePowerUp() {
             powerUpActive = true;
+            powerUpTimeRemaining = 7.0; // 7 seconds
             ghosts.forEach(g => {
                 if (!g.returning) g.scared = true;
             });
@@ -1476,6 +2041,7 @@
             if (powerUpTimer) clearTimeout(powerUpTimer);
             powerUpTimer = setTimeout(() => {
                 powerUpActive = false;
+                powerUpTimeRemaining = 0;
                 ghosts.forEach(g => g.scared = false);
             }, 7000);
         }
@@ -1489,12 +2055,16 @@
             tux.nextDirection = 'right';
 
             ghosts.forEach((ghost, i) => {
+                const startY = ghostData[i].startOutside ? 11 : ghostData[i].startY;
                 ghost.x = ghostData[i].startX;
-                ghost.y = ghostData[i].startY;
+                ghost.y = startY;
                 ghost.visualX = ghostData[i].startX;
-                ghost.visualY = ghostData[i].startY;
+                ghost.visualY = startY;
                 ghost.scared = false;
                 ghost.returning = false;
+                ghost.released = ghostData[i].releaseTime === 0;
+                ghost.releaseCounter = 0;
+                ghost.inHouse = !ghostData[i].startOutside;
             });
         }
 
@@ -1502,22 +2072,49 @@
             gameMap = baseMap.map(row => [...row]);
             dotsEaten = 0;
             resetPositions();
+            playLevelUpSound();
             showToast(`¡Nivel ${level}! Dificultad aumentada`);
         }
 
-        async function gameOver(won) {
+        async function gameOver() {
             gameState = 'gameover';
             if (gameLoop) cancelAnimationFrame(gameLoop);
 
-            const tokens = Math.floor(score / 10);
+            playGameOverSound();
+
+            const tokens = Math.floor(score / 100);
+            const finalLevel = level - 1;
+
+            // Calculate checkpoint for campaign mode
+            let checkpointToSave = currentCheckpoint;
+            if (gameMode === 'campaign') {
+                // Update highest level if we passed it
+                if (finalLevel > highestLevelCampaign) {
+                    highestLevelCampaign = finalLevel;
+                }
+                // Calculate checkpoint: every 5 levels
+                checkpointToSave = Math.floor((highestLevelCampaign - 1) / 5) * 5 + 1;
+                currentCheckpoint = checkpointToSave;
+            }
 
             // Save to server if logged in
             if (currentUser) {
                 try {
-                    const data = await apiCall('/game/save', 'POST', { score, level });
+                    const saveData = {
+                        score,
+                        level: finalLevel,
+                        mode: gameMode,
+                        checkpoint: gameMode === 'campaign' ? checkpointToSave : undefined
+                    };
+                    const data = await apiCall('/game/save', 'POST', saveData);
                     currentUser.coins = data.user.coins;
                     currentUser.bestScore = data.user.bestScore;
+                    currentUser.bestScoreCampaign = data.user.bestScoreCampaign;
+                    currentUser.highestLevelCampaign = data.user.highestLevelCampaign;
+                    currentUser.currentCheckpointCampaign = data.user.currentCheckpointCampaign;
                     currentUser.gamesPlayed = data.user.gamesPlayed;
+                    currentUser.gamesPlayedInfinite = data.user.gamesPlayedInfinite;
+                    currentUser.gamesPlayedCampaign = data.user.gamesPlayedCampaign;
                     updateUserUI();
                 } catch (error) {
                     console.error('Error saving game:', error);
@@ -1529,18 +2126,12 @@
             const title = document.getElementById('modalTitle');
             const subtitle = document.getElementById('modalSubtitle');
 
-            if (won) {
-                content.classList.add('win');
-                title.textContent = '¡VICTORIA!';
-                subtitle.textContent = '$ chmod +x victory.sh';
-            } else {
-                content.classList.remove('win');
-                title.textContent = 'GAME OVER';
-                subtitle.textContent = '$ kill -9 tux';
-            }
+            content.classList.remove('win');
+            title.textContent = 'GAME OVER';
+            subtitle.textContent = '$ kill -9 tux';
 
             document.getElementById('finalScore').textContent = score.toLocaleString();
-            document.getElementById('finalLevel').textContent = level;
+            document.getElementById('finalLevel').textContent = finalLevel;
             document.getElementById('tokensEarned').textContent = `+${tokens}`;
 
             modal.classList.add('visible');
@@ -1548,13 +2139,35 @@
 
         function restartGame() {
             closeModal();
-            level = 1;
+
+            // Always reset to initial state
+            gameState = 'idle';
+            score = 0;
+
+            if (gameMode === 'infinite') {
+                // Infinite mode always starts from level 1
+                level = 1;
+            } else if (gameMode === 'campaign') {
+                // Campaign mode starts from last checkpoint (multiple of 5)
+                // Calculate checkpoint based on highest level reached
+                const checkpoint = Math.floor((highestLevelCampaign - 1) / 5) * 5 + 1;
+                level = checkpoint;
+                currentCheckpoint = checkpoint;
+            }
+
             initGame();
             startGame();
         }
 
         function closeModal() {
             document.getElementById('gameOverModal').classList.remove('visible');
+
+            // Reset game state in infinite mode to prepare for next game
+            if (gameMode === 'infinite') {
+                gameState = 'idle';
+                score = 0;
+                level = 1;
+            }
         }
 
         function updateStats() {
@@ -1618,8 +2231,20 @@
                     ctx.arc(px + 14, py + 8, 2, 0, Math.PI * 2);
                     ctx.fill();
                 } else {
-                    ctx.fillStyle = ghost.scared ? '#2222ff' : ghost.color;
-                    ctx.shadowColor = ghost.scared ? '#2222ff' : ghost.color;
+                    // Blink when power-up is about to end
+                    let ghostColor = ghost.color;
+                    if (ghost.scared) {
+                        if (powerUpTimeRemaining < 2 && powerUpTimeRemaining > 0) {
+                            // Blink between blue and white
+                            const blinkRate = Math.floor(gameTime * 8) % 2;
+                            ghostColor = blinkRate === 0 ? '#2222ff' : '#ffffff';
+                        } else {
+                            ghostColor = '#2222ff';
+                        }
+                    }
+
+                    ctx.fillStyle = ghostColor;
+                    ctx.shadowColor = ghostColor;
                     ctx.shadowBlur = 8;
 
                     ctx.beginPath();
@@ -1742,11 +2367,74 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
+        // ==================== SETTINGS ====================
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('visible');
+            document.getElementById('volumeSlider').value = masterVolume * 100;
+            document.getElementById('volumeValue').textContent = Math.round(masterVolume * 100) + '%';
+            document.getElementById('soundToggle').checked = soundEnabled;
+            document.getElementById('soundStatus').textContent = soundEnabled ? 'ON' : 'OFF';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('visible');
+        }
+
+        function updateVolume(value) {
+            masterVolume = value / 100;
+            document.getElementById('volumeValue').textContent = Math.round(value) + '%';
+            localStorage.setItem('tuxman_volume', masterVolume);
+
+            // Test sound
+            playSound(440, 0.1, 'sine', 0.5);
+        }
+
+        function toggleSound() {
+            soundEnabled = document.getElementById('soundToggle').checked;
+            document.getElementById('soundStatus').textContent = soundEnabled ? 'ON' : 'OFF';
+            localStorage.setItem('tuxman_sound', soundEnabled);
+
+            if (soundEnabled) {
+                initAudio();
+                playSound(440, 0.1, 'sine', 0.5);
+            }
+        }
+
         // ==================== INIT ====================
         window.onload = async function() {
             await checkAuth();
+            if (currentUser) {
+                highestLevelCampaign = currentUser.highestLevelCampaign || 1;
+                currentCheckpoint = currentUser.currentCheckpointCampaign || 1;
+            }
+
+            // Restore game mode buttons
+            const infiniteBtn = document.getElementById('modeInfinite');
+            const campaignBtn = document.getElementById('modeCampaign');
+
+            if (gameMode === 'campaign') {
+                campaignBtn.style.borderColor = 'var(--terminal-green)';
+                campaignBtn.style.color = 'var(--terminal-green)';
+                infiniteBtn.style.borderColor = 'var(--accent-cyan)';
+                infiniteBtn.style.color = 'var(--accent-cyan)';
+                level = currentCheckpoint || 1;
+            } else {
+                infiniteBtn.style.borderColor = 'var(--terminal-green)';
+                infiniteBtn.style.color = 'var(--terminal-green)';
+                campaignBtn.style.borderColor = 'var(--accent-cyan)';
+                campaignBtn.style.color = 'var(--accent-cyan)';
+                level = 1;
+            }
+
             initGame();
         };
+
+        window.addEventListener('resize', () => {
+            if (canvas) {
+                resizeCanvas();
+                draw();
+            }
+        });
     </script>
 </body>
 </html>

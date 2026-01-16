@@ -38,7 +38,12 @@ async function initDatabase() {
                 password VARCHAR(255) NOT NULL,
                 coins INTEGER DEFAULT 50,
                 best_score INTEGER DEFAULT 0,
+                best_score_campaign INTEGER DEFAULT 0,
+                highest_level_campaign INTEGER DEFAULT 1,
+                current_checkpoint_campaign INTEGER DEFAULT 1,
                 games_played INTEGER DEFAULT 0,
+                games_played_infinite INTEGER DEFAULT 0,
+                games_played_campaign INTEGER DEFAULT 0,
                 equipped_skin VARCHAR(50) DEFAULT 'default',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -56,6 +61,7 @@ async function initDatabase() {
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 score INTEGER NOT NULL,
                 level INTEGER NOT NULL,
+                game_mode VARCHAR(20) DEFAULT 'infinite',
                 tokens_earned INTEGER NOT NULL,
                 played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -64,6 +70,8 @@ async function initDatabase() {
             CREATE INDEX IF NOT EXISTS idx_owned_skins_user ON owned_skins(user_id);
             CREATE INDEX IF NOT EXISTS idx_game_history_user ON game_history(user_id);
             CREATE INDEX IF NOT EXISTS idx_users_best_score ON users(best_score DESC);
+            CREATE INDEX IF NOT EXISTS idx_users_highest_level ON users(highest_level_campaign DESC);
+            CREATE INDEX IF NOT EXISTS idx_game_history_mode ON game_history(game_mode);
         `);
         console.log('✅ Database tables initialized');
     } catch (error) {
@@ -156,6 +164,12 @@ app.post('/api/auth/register', async (req, res) => {
                 username: normalizedUsername,
                 coins: 50,
                 bestScore: 0,
+                bestScoreCampaign: 0,
+                highestLevelCampaign: 1,
+                currentCheckpointCampaign: 1,
+                gamesPlayed: 0,
+                gamesPlayedInfinite: 0,
+                gamesPlayedCampaign: 0,
                 equippedSkin: 'default',
                 ownedSkins: ['default']
             }
@@ -221,7 +235,12 @@ app.post('/api/auth/login', async (req, res) => {
                 username: user.username,
                 coins: user.coins,
                 bestScore: user.best_score,
+                bestScoreCampaign: user.best_score_campaign || 0,
+                highestLevelCampaign: user.highest_level_campaign || 1,
+                currentCheckpointCampaign: user.current_checkpoint_campaign || 1,
                 gamesPlayed: user.games_played,
+                gamesPlayedInfinite: user.games_played_infinite || 0,
+                gamesPlayedCampaign: user.games_played_campaign || 0,
                 equippedSkin: user.equipped_skin,
                 ownedSkins
             }
@@ -262,7 +281,12 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
                 username: user.username,
                 coins: user.coins,
                 bestScore: user.best_score,
+                bestScoreCampaign: user.best_score_campaign || 0,
+                highestLevelCampaign: user.highest_level_campaign || 1,
+                currentCheckpointCampaign: user.current_checkpoint_campaign || 1,
                 gamesPlayed: user.games_played,
+                gamesPlayedInfinite: user.games_played_infinite || 0,
+                gamesPlayedCampaign: user.games_played_campaign || 0,
                 equippedSkin: user.equipped_skin,
                 ownedSkins
             }
@@ -282,43 +306,64 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 app.post('/api/game/save', authenticateToken, async (req, res) => {
     const client = await pool.connect();
     try {
-        const { score, level } = req.body;
+        const { score, level, mode, checkpoint } = req.body;
         const userId = req.user.id;
+        const gameMode = mode || 'infinite';
 
         if (typeof score !== 'number' || typeof level !== 'number') {
             return res.status(400).json({ error: 'Score y level requeridos' });
         }
 
-        const tokensEarned = Math.floor(score / 10);
+        const tokensEarned = Math.floor(score / 100);
 
         // Get current user data
         const userResult = await client.query(
-            'SELECT best_score FROM users WHERE id = $1',
+            'SELECT best_score, best_score_campaign, highest_level_campaign, current_checkpoint_campaign, games_played_infinite, games_played_campaign FROM users WHERE id = $1',
             [userId]
         );
-        const currentBestScore = userResult.rows[0].best_score;
-        const newBestScore = Math.max(currentBestScore, score);
+        const userData = userResult.rows[0];
+
+        let updateQuery, updateParams;
+
+        if (gameMode === 'infinite') {
+            const newBestScore = Math.max(userData.best_score, score);
+            updateQuery = `UPDATE users
+                SET coins = coins + $1,
+                    best_score = $2,
+                    games_played = games_played + 1,
+                    games_played_infinite = games_played_infinite + 1
+                WHERE id = $3`;
+            updateParams = [tokensEarned, newBestScore, userId];
+        } else {
+            // Campaign mode
+            const newBestScoreCampaign = Math.max(userData.best_score_campaign, score);
+            const newHighestLevel = Math.max(userData.highest_level_campaign, level);
+            const newCheckpoint = checkpoint || Math.max(userData.current_checkpoint_campaign, level);
+
+            updateQuery = `UPDATE users
+                SET coins = coins + $1,
+                    best_score_campaign = $2,
+                    highest_level_campaign = $3,
+                    current_checkpoint_campaign = $4,
+                    games_played = games_played + 1,
+                    games_played_campaign = games_played_campaign + 1
+                WHERE id = $5`;
+            updateParams = [tokensEarned, newBestScoreCampaign, newHighestLevel, newCheckpoint, userId];
+        }
 
         // Update user stats
-        await client.query(
-            `UPDATE users 
-             SET coins = coins + $1, 
-                 best_score = $2, 
-                 games_played = games_played + 1 
-             WHERE id = $3`,
-            [tokensEarned, newBestScore, userId]
-        );
+        await client.query(updateQuery, updateParams);
 
         // Save to history
         await client.query(
-            `INSERT INTO game_history (user_id, score, level, tokens_earned)
-             VALUES ($1, $2, $3, $4)`,
-            [userId, score, level, tokensEarned]
+            `INSERT INTO game_history (user_id, score, level, game_mode, tokens_earned)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [userId, score, level, gameMode, tokensEarned]
         );
 
         // Get updated user
         const updatedResult = await client.query(
-            'SELECT coins, best_score, games_played FROM users WHERE id = $1',
+            'SELECT coins, best_score, best_score_campaign, highest_level_campaign, current_checkpoint_campaign, games_played, games_played_infinite, games_played_campaign FROM users WHERE id = $1',
             [userId]
         );
         const updatedUser = updatedResult.rows[0];
@@ -326,16 +371,47 @@ app.post('/api/game/save', authenticateToken, async (req, res) => {
         res.json({
             message: 'Partida guardada',
             tokensEarned,
-            newBest: score > currentBestScore,
             user: {
                 coins: updatedUser.coins,
                 bestScore: updatedUser.best_score,
-                gamesPlayed: updatedUser.games_played
+                bestScoreCampaign: updatedUser.best_score_campaign,
+                highestLevelCampaign: updatedUser.highest_level_campaign,
+                currentCheckpointCampaign: updatedUser.current_checkpoint_campaign,
+                gamesPlayed: updatedUser.games_played,
+                gamesPlayedInfinite: updatedUser.games_played_infinite,
+                gamesPlayedCampaign: updatedUser.games_played_campaign
             }
         });
 
     } catch (error) {
         console.error('Save game error:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    } finally {
+        client.release();
+    }
+});
+
+// Get campaign progress
+app.get('/api/game/campaign-progress', authenticateToken, async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const userId = req.user.id;
+
+        const userResult = await client.query(
+            'SELECT highest_level_campaign, best_score_campaign, current_checkpoint_campaign FROM users WHERE id = $1',
+            [userId]
+        );
+
+        const userData = userResult.rows[0];
+
+        res.json({
+            highestLevel: userData.highest_level_campaign || 1,
+            currentCheckpoint: userData.current_checkpoint_campaign || 1,
+            bestScore: userData.best_score_campaign || 0
+        });
+
+    } catch (error) {
+        console.error('Get campaign progress error:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     } finally {
         client.release();
@@ -449,17 +525,30 @@ app.get('/api/leaderboard', async (req, res) => {
     const client = await pool.connect();
     try {
         const limit = parseInt(req.query.limit) || 10;
+        const mode = req.query.mode || 'infinite';
 
-        const result = await client.query(
-            `SELECT username, best_score, games_played, equipped_skin
-             FROM users
-             WHERE best_score > 0
-             ORDER BY best_score DESC
-             LIMIT $1`,
-            [limit]
-        );
+        let query, field;
 
-        res.json({ leaderboard: result.rows });
+        if (mode === 'infinite') {
+            field = 'best_score';
+            query = `SELECT username, best_score as score, games_played_infinite as games_played, equipped_skin
+                     FROM users
+                     WHERE best_score > 0
+                     ORDER BY best_score DESC
+                     LIMIT $1`;
+        } else {
+            // Campaign mode (kernel)
+            field = 'highest_level_campaign';
+            query = `SELECT username, highest_level_campaign as level, best_score_campaign as score, games_played_campaign as games_played, equipped_skin
+                     FROM users
+                     WHERE highest_level_campaign > 1
+                     ORDER BY highest_level_campaign DESC, best_score_campaign DESC
+                     LIMIT $1`;
+        }
+
+        const result = await client.query(query, [limit]);
+
+        res.json({ leaderboard: result.rows, mode });
 
     } catch (error) {
         console.error('Leaderboard error:', error);
