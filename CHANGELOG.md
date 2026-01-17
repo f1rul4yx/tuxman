@@ -2,6 +2,39 @@
 
 Todos los cambios notables del proyecto TuxMan serán documentados en este archivo.
 
+## [2.1.0] - 2026-01-17
+
+### Añadido
+- **Vibración en controles móviles**: Feedback táctil de 30ms al pulsar botones de dirección
+- **Diseño responsive mejorado para móviles pequeños**:
+  - Media query específica para pantallas < 400px (iPhone SE, 12 mini, etc.)
+  - Controles más compactos (55px en lugar de 70px)
+  - Stats, botones y logo optimizados para pantallas pequeñas
+  - Canvas se escala según ancho Y alto disponible
+- **Prevención de scroll accidental**:
+  - Touch-action: none en canvas y controles móviles
+  - Event listeners con preventDefault() en botones táctiles
+  - Viewport con maximum-scale para evitar zoom accidental
+
+### Corregido
+- **Bug crítico de fantasmas atascados**: Los fantasmas muertos ahora atraviesan paredes cuando regresan a la casa (como en Pac-Man original)
+- **Bug de colisiones fantasma**: Mejorada detección de salida de la casa (ahora funciona cuando y <= 11, no solo en posición exacta)
+- **Bug de score en modo Kernel**: El score ahora se resetea correctamente al cerrar el modal de game over
+- **Scroll no deseado en móvil**: Implementado touch-action: none solo en áreas de juego, permitiendo scroll normal en el resto de la página
+
+### Mejorado
+- **Algoritmo de escalado del canvas**: Ahora considera tanto ancho como alto disponible, ajustando espacio para controles según tamaño de pantalla
+- **Experiencia táctil**: Botones con user-select: none y -webkit-tap-highlight-color: transparent
+- **Rendimiento móvil**: Reducido padding y gaps en pantallas pequeñas para maximizar espacio de juego
+
+### Técnico
+- Fantasmas returning pueden atravesar celdas tipo 0 (paredes) en función `canGhostMove()`
+- Función `resizeCanvas()` ajustada con cálculo dinámico de controlsHeight según viewport
+- CSS media query @media (max-width: 400px) con ajustes específicos para iPhones pequeños
+- Event listeners en botones móviles con { passive: false } para permitir preventDefault()
+
+---
+
 ## [2.0.0] - 2026-01-17
 
 ### Añadido

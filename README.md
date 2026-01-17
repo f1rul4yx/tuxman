@@ -2,7 +2,7 @@
 
 Juego web tipo Pac-Man con temática Linux. Incluye sistema de usuarios, tienda de skins, dos modos de juego y ranking global.
 
-![TuxMan](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Version](https://img.shields.io/badge/Version-2.0-orange)
+![TuxMan](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Version](https://img.shields.io/badge/Version-2.1.0-orange)
 
 ---
 
@@ -68,13 +68,13 @@ cd tuxman
 docker login
 
 # 3. Construir la imagen (cambia TUUSUARIO por tu usuario de Docker Hub)
-docker build -t TUUSUARIO/tuxman:2.0 ./build
+docker build -t TUUSUARIO/tuxman:2.1.0 ./build
 
 # 4. También etiquetar como latest
-docker tag TUUSUARIO/tuxman:2.0 TUUSUARIO/tuxman:latest
+docker tag TUUSUARIO/tuxman:2.1.0 TUUSUARIO/tuxman:latest
 
 # 5. Subir ambas etiquetas a Docker Hub
-docker push TUUSUARIO/tuxman:2.0
+docker push TUUSUARIO/tuxman:2.1.0
 docker push TUUSUARIO/tuxman:latest
 ```
 
@@ -83,12 +83,12 @@ docker push TUUSUARIO/tuxman:latest
 docker login
 # Introduce tu usuario y contraseña de Docker Hub
 
-docker build -t f1rul4yx/tuxman:2.0 ./build
+docker build -t f1rul4yx/tuxman:2.1.0 ./build
 # Building...
 
-docker tag f1rul4yx/tuxman:2.0 f1rul4yx/tuxman:latest
+docker tag f1rul4yx/tuxman:2.1.0 f1rul4yx/tuxman:latest
 
-docker push f1rul4yx/tuxman:2.0
+docker push f1rul4yx/tuxman:2.1.0
 docker push f1rul4yx/tuxman:latest
 # Pushing...
 ```
@@ -112,7 +112,7 @@ services:
       POSTGRES_PASSWORD: TuPasswordSegura123      # 👈 CAMBIA ESTO
 
   app:
-    image: f1rul4yx/tuxman:2.0                    # 👈 PON TU USUARIO Y VERSIÓN
+    image: f1rul4yx/tuxman:2.1.0                  # 👈 PON TU USUARIO Y VERSIÓN
     environment:
       JWT_SECRET: CambiaEstoCon32CaracteresMinimo # 👈 CAMBIA ESTO
       DB_PASSWORD: TuPasswordSegura123            # 👈 IGUAL QUE ARRIBA
@@ -394,6 +394,16 @@ docker exec -it tuxman-db psql -U tuxman -d tuxman -c "\d users"
 ---
 
 ## 📝 Changelog
+
+### v2.1.0 (2026-01-17)
+- 📳 Vibración en controles móviles (feedback táctil de 30ms)
+- 📱 Diseño responsive mejorado para iPhones pequeños (<400px)
+- 🐛 Fix: Fantasmas atascados ahora atraviesan paredes al morir
+- 🐛 Fix: Score se resetea correctamente en modo Kernel
+- 🐛 Fix: Detección mejorada de salida de casa de fantasmas
+- 🚫 Prevención de scroll accidental en móvil (touch-action: none)
+- 🎮 Algoritmo de escalado mejorado (considera ancho y alto)
+- ⚡ Mejor experiencia táctil con preventDefault() en botones
 
 ### v2.0 (2026-01)
 - ✨ Dos modos de juego (Infinite y Kernel/Campaign)

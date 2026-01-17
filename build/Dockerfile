@@ -8,7 +8,7 @@ FROM node:20-alpine
 # Metadata de la imagen
 LABEL maintainer="Diego - ASIR" \
       description="TuxMan - Juego Pac-Man con temática Linux" \
-      version="2.0"
+      version="2.1.0"
 
 # Instalar dependencias necesarias (curl para healthcheck, postgresql-client para entrypoint)
 RUN apk add --no-cache curl postgresql-client
