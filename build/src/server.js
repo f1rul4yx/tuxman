@@ -13,7 +13,7 @@ const SALT_ROUNDS = 10;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // PostgreSQL connection pool
 const pool = new Pool({
@@ -596,7 +596,7 @@ app.get('/api/health', async (req, res) => {
 
 // Serve frontend for any other route
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // Start server

@@ -17,18 +17,18 @@ RUN apk add --no-cache curl postgresql-client
 WORKDIR /app
 
 # Copiar archivos de dependencias primero (mejor cache de Docker)
-COPY app/package*.json ./
+COPY package*.json ./
 
 # Instalar solo dependencias de producción
 RUN npm install --omit=dev && \
     npm cache clean --force
 
 # Copiar el resto de la aplicación
-COPY app/ ./
+COPY . ./
 
 # Copiar script de entrypoint
-COPY entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Crear usuario no-root para seguridad
 RUN addgroup -g 1001 -S nodejs && \
@@ -46,7 +46,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Usar ENTRYPOINT para el script de inicialización
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # CMD para ejecutar la aplicación
-CMD ["node", "server.js"]
+CMD ["node", "src/server.js"]
