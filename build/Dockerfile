@@ -1,52 +1,23 @@
-# =============================================
-# 🐧 TUXMAN - Dockerfile con Buenas Prácticas
-# =============================================
-
-# Usar imagen base oficial de Node.js Alpine (ligera y segura)
 FROM node:20-alpine
 
-# Metadata de la imagen
-LABEL maintainer="Diego - ASIR" \
-      description="TuxMan - Juego Pac-Man con temática Linux" \
-      version="2.1.0"
+RUN apk add --no-cache postgresql-client
 
-# Instalar dependencias necesarias (curl para healthcheck, postgresql-client para entrypoint)
-RUN apk add --no-cache curl postgresql-client
-
-# Crear directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de dependencias primero (mejor cache de Docker)
 COPY package*.json ./
+RUN npm install --production && npm cache clean --force
 
-# Instalar solo dependencias de producción
-RUN npm install --omit=dev && \
-    npm cache clean --force
+COPY src/ ./src/
+COPY public/ ./public/
 
-# Copiar el resto de la aplicación
-COPY . ./
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-# Copiar script de entrypoint
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Crear usuario no-root para seguridad
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 -G nodejs && \
-    chown -R nodejs:nodejs /app
-
-# Cambiar a usuario no-root
-USER nodejs
-
-# Puerto expuesto
 EXPOSE 3000
 
-# Healthcheck para verificar que la app está funcionando
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV TZ=Europe/Madrid
 
-# Usar ENTRYPOINT para el script de inicialización
-ENTRYPOINT ["docker-entrypoint.sh"]
-
-# CMD para ejecutar la aplicación
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "src/server.js"]
