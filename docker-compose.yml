@@ -1,21 +1,4 @@
-version: '3.8'
-
-# =============================================
-# 🐧 TUXMAN - Docker Compose
-# =============================================
-#
-# ANTES DE USAR:
-# 1. Cambia las contraseñas (DB_PASSWORD y JWT_SECRET)
-# 2. Construye la imagen: docker compose build
-# 3. Ejecuta: docker compose up -d
-# 4. Abre: http://localhost:3000
-#
-# =============================================
-
 services:
-  # ------------------------------
-  # BASE DE DATOS - PostgreSQL
-  # ------------------------------
   db:
     image: postgres:16-alpine
     container_name: tuxman-db
@@ -26,7 +9,7 @@ services:
       POSTGRES_DB: tuxman
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
-      - tuxman_data:/var/lib/postgresql/data
+      - ./data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tuxman -d tuxman"]
       interval: 10s
@@ -41,13 +24,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ------------------------------
-  # APLICACIÓN - TuxMan
-  # ------------------------------
   app:
-    build:
-      context: ./build
-      dockerfile: Dockerfile
     image: f1rul4yx/tuxman:latest
     container_name: tuxman-app
     restart: unless-stopped
@@ -73,16 +50,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-# ------------------------------
-# NETWORKS
-# ------------------------------
 networks:
   tuxman-network:
     driver: bridge
-
-# ------------------------------
-# VOLUMES
-# ------------------------------
-volumes:
-  tuxman_data:
-    driver: local
