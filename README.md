@@ -42,11 +42,9 @@ docker compose up -d
 Accede a `http://TU_IP:3000` y regístrate desde la pantalla de inicio.
 
 ```bash
-docker compose down              # Parar
-docker compose down && rm -rf ./data  # Parar y borrar datos
-docker compose restart           # Reiniciar
-docker compose logs -f           # Ver logs
-docker compose pull              # Actualizar imagen
+docker compose down       # Parar
+docker compose restart    # Reiniciar
+docker compose logs -f    # Ver logs
 ```
 
 ## Build
